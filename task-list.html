@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow - Task List</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>📋 TaskFlow</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="add-task.html">Add Task</a>
+            <a href="task-list.html">Task List</a>
+            <a href="task-detail.html">Task Detail</a>
+            <a href="about.html">About</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="task-list-container">
+            <h2>All Tasks</h2>
+            
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">All Tasks</button>
+                <button class="filter-btn" data-filter="pending">Pending</button>
+                <button class="filter-btn" data-filter="completed">Completed</button>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="tasks-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Due Date</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="task-table-body">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="task-summary">
+                <p id="task-count">Loading tasks...</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 TaskFlow - Task Management Simplified</p>
+    </footer>
+
+    <script>
+        let tasks = [
+            { id: 1, title: "Complete DevOps Assignment", description: "Finish CI/CD pipeline integration", dueDate: "2026-06-20", priority: "High", status: "Pending" },
+            { id: 2, title: "Review Pull Requests", description: "Review team members' PRs", dueDate: "2026-06-18", priority: "Medium", status: "Pending" },
+            { id: 3, title: "Update Documentation", description: "Update project README", dueDate: "2026-06-15", priority: "Low", status: "Completed" },
+            { id: 4, title: "Deploy to Render", description: "Final deployment check", dueDate: "2026-06-22", priority: "High", status: "Pending" },
+            { id: 5, title: "Team Meeting", description: "Weekly sync", dueDate: "2026-06-14", priority: "Medium", status: "Completed" }
+        ];
+
+        let currentFilter = "all";
+
+        function renderTasks() {
+            const tbody = document.getElementById("task-table-body");
+            if (!tbody) return;
+
+            let filteredTasks = tasks;
+            if (currentFilter === "pending") {
+                filteredTasks = tasks.filter(task => task.status === "Pending");
+            } else if (currentFilter === "completed") {
+                filteredTasks = tasks.filter(task => task.status === "Completed");
+            }
+
+            if (filteredTasks.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="no-tasks">No tasks found</td></tr>`;
+                document.getElementById("task-count").innerHTML = `Showing 0 tasks`;
+                return;
+            }
+
+            let html = "";
+            for (let task of filteredTasks) {
+                const priorityClass = task.priority.toLowerCase();
+                const statusClass = task.status.toLowerCase();
+                html += `
+                    <tr>
+                        <td class="task-title">${task.title}</td>
+                        <td>${task.dueDate}</td>
+                        <td><span class="priority-badge ${priorityClass}">${task.priority}</span></td>
+                        <td><span class="status-badge ${statusClass}">${task.status}</span></td>
+                        <td>
+                            <button class="view-btn" onclick="viewTask(${task.id})">View</button>
+                            <button class="toggle-btn" onclick="toggleStatus(${task.id})">${task.status === "Pending" ? "Complete" : "Undo"}</button>
+                        </td>
+                    </tr>
+                `;
+            }
+            tbody.innerHTML = html;
+            document.getElementById("task-count").innerHTML = `Showing ${filteredTasks.length} of ${tasks.length} tasks`;
+        }
+
+        function toggleStatus(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.status = task.status === "Pending" ? "Completed" : "Pending";
+                renderTasks();
+                localStorage.setItem("tasks", JSON.stringify(tasks));
+            }
+        }
+
+        function viewTask(taskId) {
+            localStorage.setItem("selectedTaskId", taskId);
+            window.location.href = "task-detail.html";
+        }
+
+        function setupFilters() {
+            const buttons = document.querySelectorAll(".filter-btn");
+            buttons.forEach(btn => {
+                btn.addEventListener("click", function() {
+                    buttons.forEach(b => b.classList.remove("active"));
+                    this.classList.add("active");
+                    currentFilter = this.getAttribute("data-filter");
+                    renderTasks();
+                });
+            });
+        }
+
+        function loadTasksFromStorage() {
+            const storedTasks = localStorage.getItem("tasks");
+            if (storedTasks) {
+                tasks = JSON.parse(storedTasks);
+            } else {
+                localStorage.setItem("tasks", JSON.stringify(tasks));
+            }
+            renderTasks();
+        }
+
+        loadTasksFromStorage();
+        setupFilters();
+    </script>
+</body>
+</html>

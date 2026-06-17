@@ -1,0 +1,41 @@
+name: CI - Build and Push Docker Image
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Step 3: Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/taskflow-cicd:latest .
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/taskflow-cicd:${{ github.sha }} .
+
+      # Step 4: Push Docker image
+      - name: Push Docker image to Docker Hub
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/taskflow-cicd:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/taskflow-cicd:${{ github.sha }}
+
+      # Step 5: Verify image was pushed
+      - name: Verify image push
+        run: |
+          echo "✅ Docker image pushed successfully!"
+          echo "Image: ${{ secrets.DOCKERHUB_USERNAME }}/taskflow-cicd:latest"
+          echo "Image: ${{ secrets.DOCKERHUB_USERNAME }}/taskflow-cicd:${{ github.sha }}"
