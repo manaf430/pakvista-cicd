@@ -1,21 +1,36 @@
-name: cd-staging
+
+name: ci-staging
 
 on:
-  push:
+  pull_request:
     branches:
       - staging
 
 jobs:
-  deploy-staging:
+  build-and-push-staging:
     runs-on: ubuntu-latest
-    environment: staging
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Trigger Render Staging Deploy
-        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_STAGING_URL }}"
+      - name: Basic HTML and CSS validation
+        run: |
+          echo "Checking HTML and CSS files"
+          test -f index.html
+          test -f style.css
 
-      - name: Confirm deployment
-        run: echo "Deployment to staging triggered at $(date)"
+      - name: Docker Login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/pakvista:staging-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/pakvista:staging-${{ github.sha }}
